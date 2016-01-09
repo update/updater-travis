@@ -1,0 +1,37 @@
+{
+  "name": "update-travis",
+  "description": "Update or lint a package.json based on globally stored preferences.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/jonschlinkert/update-travis",
+  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+  "repository": "jonschlinkert/update-travis",
+  "bugs": {
+    "url": "https://github.com/jonschlinkert/update-travis/issues"
+  },
+  "license": "MIT",
+  "files": [
+    "updatefile.js"
+  ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "preferGlobal": true,
+  "keywords": [
+    "travis",
+    "update"
+  ],
+  "verb": {
+    "related": {
+      "list": [
+        "update-dotfiles",
+        "update-jshint",
+        "update-pkg"
+      ],
+      "description": ""
+    }
+  }
+}

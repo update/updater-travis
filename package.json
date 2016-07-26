@@ -64,7 +64,7 @@
     "toc": {
       "method": "preWrite"
     },
-    "layout": "common-minimal",
+    "layout": "updater",
     "tasks": [
       "readme"
     ],

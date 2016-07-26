@@ -1,37 +1,87 @@
 {
-  "name": "update-travis",
-  "description": "Update or lint a package.json based on globally stored preferences.",
+  "name": "updater-travis",
+  "description": "Update .travis.yml based on preferences.",
   "version": "0.1.0",
-  "homepage": "https://github.com/jonschlinkert/update-travis",
+  "homepage": "https://github.com/update/updater-travis",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
-  "repository": "jonschlinkert/update-travis",
+  "repository": "update/updater-travis",
   "bugs": {
-    "url": "https://github.com/jonschlinkert/update-travis/issues"
+    "url": "https://github.com/update/updater-travis/issues"
   },
   "license": "MIT",
   "files": [
-    "updatefile.js"
+    "index.js",
+    "LICENSE",
+    "README.md",
+    "templates",
+    "updatefile.js",
+    "utils.js"
   ],
   "main": "index.js",
+  "preferGlobal": true,
   "engines": {
     "node": ">=0.10.0"
   },
   "scripts": {
     "test": "mocha"
   },
-  "preferGlobal": true,
+  "dependencies": {
+    "delete": "^0.3.2",
+    "fs-exists-sync": "^0.1.0",
+    "generate-travis": "^0.1.3",
+    "is-valid-app": "^0.2.0",
+    "js-yaml": "^3.6.1",
+    "lazy-cache": "^2.0.1",
+    "merge-deep": "^3.0.0",
+    "through2": "^2.0.1"
+  },
+  "devDependencies": {
+    "gulp-format-md": "^0.1.9",
+    "mocha": "^2.5.3",
+    "npm-install-global": "^0.1.2",
+    "update": "^0.7.3"
+  },
   "keywords": [
+    "fix",
+    "lint",
+    "linter",
+    "maintain",
+    "plugin",
+    "plugins",
     "travis",
-    "update"
+    "up-to-date",
+    "update",
+    "update-plugin",
+    "update-updater",
+    "updater",
+    "updaterplugin"
   ],
+  "update": {
+    "run": true
+  },
   "verb": {
+    "toc": {
+      "method": "preWrite"
+    },
+    "layout": "common-minimal",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
     "related": {
       "list": [
-        "update-dotfiles",
-        "update-jshint",
-        "update-pkg"
-      ],
-      "description": ""
-    }
+        "updater-editorconfig",
+        "updater-eslint",
+        "updater-license"
+      ]
+    },
+    "lint": {
+      "reflinks": true
+    },
+    "reflinks": [
+      "update"
+    ]
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "updater-travis",
   "description": "Update .travis.yml based on preferences.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "https://github.com/update/updater-travis",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "repository": "update/updater-travis",

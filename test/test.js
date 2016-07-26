@@ -6,18 +6,20 @@ var path = require('path');
 var assert = require('assert');
 var update = require('update');
 var npm = require('npm-install-global');
+var copy = require('copy');
 var del = require('delete');
 var updater = require('..');
 var pkg = require('../package');
 var app;
 
+var dir = __dirname;
 var fixtures = path.resolve.bind(path, __dirname, 'fixtures');
 var actual = path.resolve.bind(path, __dirname, 'actual');
 
 function exists(name, re, cb) {
   if (typeof re === 'function') {
     cb = re;
-    re = new RegExp(pkg.name);
+    re = new RegExp(/./);
   }
 
   return function(err) {
@@ -29,7 +31,7 @@ function exists(name, re, cb) {
       assert(stat);
       var str = fs.readFileSync(filepath, 'utf8');
       assert(re.test(str));
-      // del(actual(), cb);
+      // del(path.dirname(filepath), cb);
       cb();
     });
   };
@@ -42,24 +44,21 @@ describe('updater-travis', function() {
     });
   }
 
-  // before(function(cb) {
-  //   del(actual(), cb);
-  // });
-
-  beforeEach(function() {
+  beforeEach(function(cb) {
     app = update({silent: true});
     app.cwd = actual();
+    app.disable('delete');
     app.option('srcBase', fixtures());
     app.option('dest', actual());
-  });
-
-  afterEach(function(cb) {
-    del(actual(), cb);
+    copy('fixtures/test/*', 'actual/test', {cwd: dir, dot: true}, cb);
   });
 
   describe('tasks', function() {
     beforeEach(function() {
-      app.use(updater);
+      app.use(updater)
+        .disable('delete')
+        .option('srcBase', fixtures())
+        .option('dest', actual());
     });
 
     it('should run the `default` task with .build', function(cb) {
@@ -93,7 +92,7 @@ describe('updater-travis', function() {
       app.update('travis', exists('.travis.yml', cb));
     });
 
-    it.only('should run the `travis` task', function(cb) {
+    it('should run the `travis` task', function(cb) {
       app.register('travis', updater);
       app.update('travis:travis', exists('.travis.yml', cb));
     });

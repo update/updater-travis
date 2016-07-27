@@ -31,8 +31,7 @@ function exists(name, re, cb) {
       assert(stat);
       var str = fs.readFileSync(filepath, 'utf8');
       assert(re.test(str));
-      // del(path.dirname(filepath), cb);
-      cb();
+      del(path.dirname(filepath), cb);
     });
   };
 }

@@ -47,7 +47,7 @@ module.exports = function(app) {
 
   app.task('new', ['travis-new']);
   app.task('travis-new', ['paths'], function(cb) {
-    app.generate('generate-travis', cb);
+    app.generate('generate-travis:travis', cb);
   });
 
   /**
@@ -85,7 +85,7 @@ module.exports = function(app) {
    * @api public
    */
 
-  app.task('default', ['travis-update']);
+  app.task('default', ['travis']);
   app.task('travis', ['paths'], function(cb) {
     app.build(ctx.tasks, cb);
   });

@@ -66,7 +66,7 @@ module.exports = function(app) {
   app.task('travis-update', ['paths'], function() {
     var srcBase = app.options.srcBase || app.cwd;
     return app.src('.travis.yml', {cwd: srcBase, dot: true})
-      .pipe(travisUpdate(app.options))
+      .pipe(travisUpdate(app))
       .pipe(app.dest(function(file) {
         file.basename = '.travis.yml';
         return app.cwd;
@@ -115,17 +115,24 @@ module.exports = function(app) {
  * Update `.travis.yml`
  */
 
-function travisUpdate(options) {
-  options = options || {};
+function travisUpdate(app) {
+  var opts = utils.extend({}, app.options);
 
   return utils.through.obj(function(file, enc, next) {
-    var obj = utils.yaml.safeLoad(file.contents.toString());
-    obj = utils.merge({}, defaults.json, obj);
-    obj.node_js = defaults.json.node_js;
-    obj.matrix.allow_failures = defaults.json.matrix.allow_failures;
-    file.contents = new Buffer(utils.yaml.dump(obj));
+    var engines = app.pkg.get('engines.node');
+    var obj = utils.extend({}, defaults);
 
-    if (options.delete === false) {
+    if (Array.isArray(obj.node_js)) {
+      utils.updateEngine(engines, obj);
+    }
+
+    if (opts.merge) {
+      var existing = utils.yaml.safeLoad(file.contents.toString());
+      obj = utils.merge({}, defaults, existing);
+    }
+
+    file.contents = new Buffer(utils.yaml.dump(obj));
+    if (opts.delete === false) {
       next(null, file);
       return;
     }

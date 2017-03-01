@@ -1,5 +1,10 @@
 'use strict';
 
+var unset = require('unset-value');
+var unionValue = require('union-value');
+var set = require('set-value');
+var semver = require('semver');
+var get = require('get-value');
 var utils = require('lazy-cache')(require);
 var fn = require;
 require = utils;
@@ -9,60 +14,163 @@ require = utils;
  */
 
 require('delete', 'del');
-require('extend-shallow', 'extend');
 require('fs-exists-sync', 'exists');
 require('is-valid-app', 'isValid');
 require('js-yaml', 'yaml');
-require('merge-deep', 'merge');
-require('semver', 'semver');
 require('through2', 'through');
-require('array-unique', 'unique');
 require = fn;
 
-utils.updateEngine = function(engines, obj) {
-  obj.node_js = obj.node_js.filter(function(version) {
-    if (utils.isNumericVersion(version)) {
-      return utils.semver.satisfies(utils.toSemver(version), engines);
-    } else {
-      return true;
-    }
-  });
+utils.updateEngines = function(defaults, pkg, travis) {
+  var engines = mergeEngines(defaults, travis);
+  var allowedFailures = mergeAllowedFailures(defaults, travis);
 
-  var list = utils.engines(engines);
-  for (var i = 0; i < list.length; i++) {
-    var engine = utils.semver.clean(list[i]);
-    if (obj.node_js.indexOf(engine) === -1) {
-      obj.node_js.push(utils.compressVersion(engine));
-    }
+  // "e_" is engines
+  var e_partitioned = partition(engines, isNumericVersion);
+  var e_nonNumeric = e_partitioned[1];
+  var e_versions = e_partitioned[0];
+  var e_pversions = partitionVersions(e_versions, pkg);
+
+  // "a_" is allowed failures
+  var a_partitioned = partition(allowedFailures, isNumericVersion);
+  var a_versions = a_partitioned[0];
+  var a_pversions = partitionVersions(a_versions, pkg);
+
+  var required = e_pversions[0].concat(a_pversions[0]).concat(e_nonNumeric);
+  var notRequired = e_pversions[1].concat(a_pversions[1]);
+
+  var arr = [];
+  for (var i = 0; i < notRequired.length; i++) {
+    arr.push({node_js: notRequired[i]});
   }
-  obj.node_js = utils.unique(obj.node_js);
-  obj.node_js.sort();
-  obj.node_js.reverse();
+
+  updateValue(travis, 'node_js', required);
+  updateValue(travis, 'matrix.allow_failures', arr, 'node_js');
+  if (!get(travis, 'matrix.allow_failures').length) {
+    unset(travis, 'matrix.allow_failures');
+  }
+  if (Object.keys(travis.matrix).length === 1) {
+    delete travis.matrix;
+  }
+  return travis;
 };
 
-utils.engines = function(str) {
-  var re = /(\D*)([\d.]+)\s*/;
-  var engines = String(str).trim().split(' ');
+function mergeEngines(defaults, travis) {
+  var defaultValues = defaults.node_js || [];
+  var travisValues = travis.node_js || [];
+  return formatVersions(defaultValues.concat(travisValues));
+}
+
+function mergeAllowedFailures(defaults, travis) {
+  var defaultValues = mapValues(defaults, 'matrix.allow_failures', 'node_js');
+  var travisValues = mapValues(travis, 'matrix.allow_failures', 'node_js');
+  return formatVersions(defaultValues.concat(travisValues));
+}
+
+function formatVersions(versions) {
+  var result = [];
+  for (var i = 0; i < versions.length; i++) {
+    var version = String(versions[i]).trim();
+    if (isNumericVersion(version)) {
+      version = toSemver(version);
+    }
+    if (result.indexOf(version) === -1) {
+      result.push(version);
+    }
+  }
+  return result;
+}
+
+function mapValues(obj, prop, key) {
+  var arr = get(obj, prop);
+  if (!arr) return [];
+  var values = [];
+  for (var i = 0; i < arr.length; i++) {
+    var val = get(arr[i], key);
+    if (val) values.push(val);
+  }
+  return values;
+}
+
+function updateValue(obj, prop, arr, sortBy) {
+  set(obj, prop, []);
+
+  var stash = [];
   var res = [];
-  for (var i = 0; i < engines.length; i++) {
-    var m = re.exec(engines[i]);
-    if (!m) continue;
-    res.push(utils.toSemver(m[2]));
+
+  for (var i = 0; i < arr.length; i++) {
+    var ele = arr[i];
+
+    if (typeof ele === 'string') {
+      if (isNumericVersion(ele)) {
+        ele = String(compressVersion(ele));
+      }
+      if (res.indexOf(ele) === -1) {
+        res.push(ele);
+      }
+    } else if (sortBy && isNumericVersion(ele[sortBy])) {
+      ele[sortBy] = String(compressVersion(ele[sortBy]));
+      if (stash.indexOf(ele[sortBy]) === -1) {
+        stash.push(ele[sortBy]);
+        res.push(ele);
+      }
+    }
   }
-  return res;
-};
+  unionValue(obj, prop, res);
+  sortValue(obj, prop, sortBy);
+}
 
-utils.isNumericVersion = function(str) {
-  return /^[\s.\d]+$/.test(str);
-};
+function sortValue(obj, prop, sortBy) {
+  var arr = get(obj, prop);
+  if (Array.isArray(arr)) {
+    arr.sort(function(a, b) {
+      if (typeof sortBy === 'string') {
+        return a[sortBy].localeCompare(b[sortBy]);
+      }
+      return a.localeCompare(b);
+    });
+    arr.reverse();
+  }
+}
 
-utils.toSemver = function(str) {
-  var segs = str.trim().split('.');
-  while (segs.length < 3) segs.push('0');
-  return segs.join('.');
-};
+function partitionVersions(versions, pkg) {
+  var a = [];
+  var b = [];
+  for (let i = 0; i < versions.length; i++) {
+    let version = toSemver(versions[i]);
+    if (semver.satisfies(version, pkg.engines.node)) {
+      a.push(version);
+    } else {
+      b.push(version);
+    }
+  }
+  return [a, b];
+}
 
-utils.compressVersion = function(str) {
+function partition(arr, fn) {
+  var a = [];
+  var b = [];
+  for (var i = 0; i < arr.length; i++) {
+    var ele = arr[i];
+    if (fn(ele)) {
+      a.push(ele);
+    } else {
+      b.push(ele);
+    }
+  }
+  return [a, b];
+}
+
+function isNumericVersion(version) {
+  return /^\d+(\.\d+)?(\.\d+)?$/.test(version);
+}
+
+function toSemver(version) {
+  var increments = String(version).trim().split('.');
+  while (increments.length < 3) increments.push('0');
+  return increments.join('.');
+}
+
+function compressVersion(str) {
   str = String(str);
   var segs = str.trim().split('.');
   var len = segs.length;
@@ -74,7 +182,7 @@ utils.compressVersion = function(str) {
     segs.pop();
   }
   return segs.join('.');
-};
+}
 
 /**
  * Expose `utils` modules

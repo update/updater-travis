@@ -116,22 +116,14 @@ module.exports = function(app) {
  */
 
 function travisUpdate(app) {
-  var opts = utils.extend({}, app.options);
+  var opts = Object.assign({}, app.options);
+  var pkg = Object.assign({}, app.pkg.data);
 
   return utils.through.obj(function(file, enc, next) {
-    var engines = app.pkg.get('engines.node');
-    var obj = utils.extend({}, defaults);
+    var travisConfig = utils.yaml.safeLoad(file.contents.toString());
+    var config = utils.updateEngines(defaults, pkg, travisConfig);
 
-    if (Array.isArray(obj.node_js)) {
-      utils.updateEngine(engines, obj);
-    }
-
-    if (opts.merge) {
-      var existing = utils.yaml.safeLoad(file.contents.toString());
-      obj = utils.merge({}, defaults, existing);
-    }
-
-    file.contents = new Buffer(utils.yaml.dump(obj));
+    file.contents = new Buffer(utils.yaml.dump(config));
     if (opts.delete === false) {
       next(null, file);
       return;

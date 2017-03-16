@@ -1,5 +1,6 @@
 'use strict';
 
+var merge = require('merge-deep');
 var unset = require('unset-value');
 var unionValue = require('union-value');
 var set = require('set-value');
@@ -24,6 +25,11 @@ utils.updateEngines = function(defaults, pkg, travis) {
   var engines = mergeEngines(defaults, travis);
   var allowedFailures = mergeAllowedFailures(defaults, travis);
 
+  var pkgEngine = toSemver(pkg.engines.node);
+  if (engines.indexOf(pkgEngine) === -1) {
+    engines.push(pkgEngine);
+  }
+
   // "e_" is engines
   var e_partitioned = partition(engines, isNumericVersion);
   var e_nonNumeric = e_partitioned[1];
@@ -42,6 +48,8 @@ utils.updateEngines = function(defaults, pkg, travis) {
   for (var i = 0; i < notRequired.length; i++) {
     arr.push({node_js: notRequired[i]});
   }
+
+  travis = merge({}, defaults, travis);
 
   updateValue(travis, 'node_js', required);
   updateValue(travis, 'matrix.allow_failures', arr, 'node_js');
@@ -104,6 +112,9 @@ function updateValue(obj, prop, arr, sortBy) {
       if (isNumericVersion(ele)) {
         ele = String(compressVersion(ele));
       }
+      if (ele === 'stable') {
+        continue;
+      }
       if (res.indexOf(ele) === -1) {
         res.push(ele);
       }
@@ -133,10 +144,13 @@ function sortValue(obj, prop, sortBy) {
 }
 
 function partitionVersions(versions, pkg) {
-  var a = [];
-  var b = [];
+  let a = [];
+  let b = [];
   for (let i = 0; i < versions.length; i++) {
     let version = toSemver(versions[i]);
+    if (version === 'stable') {
+      continue;
+    }
     if (semver.satisfies(version, pkg.engines.node)) {
       a.push(version);
     } else {
@@ -147,10 +161,10 @@ function partitionVersions(versions, pkg) {
 }
 
 function partition(arr, fn) {
-  var a = [];
-  var b = [];
-  for (var i = 0; i < arr.length; i++) {
-    var ele = arr[i];
+  let a = [];
+  let b = [];
+  for (let i = 0; i < arr.length; i++) {
+    let ele = arr[i];
     if (fn(ele)) {
       a.push(ele);
     } else {
@@ -165,19 +179,19 @@ function isNumericVersion(version) {
 }
 
 function toSemver(version) {
-  var increments = String(version).trim().split('.');
+  version = version.replace(/^\D*|\D*$/g, '');
+  let increments = String(version).trim().split('.');
   while (increments.length < 3) increments.push('0');
   return increments.join('.');
 }
 
 function compressVersion(str) {
   str = String(str);
-  var segs = str.trim().split('.');
-  var len = segs.length;
+  let segs = str.trim().split('.');
+  let len = segs.length;
   while (len--) {
-    var v = segs[len];
-    if (v >= 1) {
-      return segs.join('.');
+    if (segs[len] >= 1) {
+      break;
     }
     segs.pop();
   }

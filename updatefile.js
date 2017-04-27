@@ -1,11 +1,16 @@
 'use strict';
 
+var fs = require('fs');
 var path = require('path');
+var del = require('delete');
+var yaml = require('js-yaml');
+var isValid = require('is-valid-app');
+var through = require('through2');
 var defaults = require('./templates/defaults');
 var utils = require('./utils');
 
 module.exports = function(app) {
-  if (!utils.isValid(app, 'updater-travis')) return;
+  if (!isValid(app, 'updater-travis')) return;
   var ctx = {paths: {}, tasks: []};
   var calculated;
 
@@ -30,13 +35,13 @@ module.exports = function(app) {
 
   app.task('del', ['travis-del']);
   app.task('travis-del', function(cb) {
-    utils.del(['.travis.yml'], {cwd: app.cwd}, cb);
+    del(['.travis.yml'], {cwd: app.cwd}, cb);
   });
 
   /**
-   * Add a new `.travis.yml` file using [templates/.travis.yml](template/.travis.yml) as a template.
-   * This task is also aliased as `travis:travis-new` to free up the `new` task name in case you use this
-   * updater as a [plugin](#api).
+   * Add a new `.travis.yml` file using [templates/.travis.yml](template/.travis.yml) as a template. This task is also aliased as `travis:travis-new`
+   * to free up the `new` task name in case you use this updater
+   * as a [plugin](#api).
    *
    * ```sh
    * $ update travis:new
@@ -104,8 +109,8 @@ module.exports = function(app) {
     calculated = true;
 
     var cwd = path.resolve.bind(path, app.options.dest || app.cwd);
-    var hasTravis = utils.exists(cwd('.travis.yml'));
-    var hasTests = utils.exists(cwd('test')) || utils.exists(cwd('test.js'));
+    var hasTravis = fs.existsSync(cwd('.travis.yml'));
+    var hasTests = fs.existsSync(cwd('test')) || fs.existsSync(cwd('test.js'));
     ctx.tasks = hasTests && hasTravis ? ['travis-update'] : [hasTests ? 'travis-new' : 'travis-del'];
     return ctx.tasks;
   }
@@ -119,17 +124,17 @@ function travisUpdate(app) {
   var opts = Object.assign({}, app.options);
   var pkg = Object.assign({}, app.pkg.data);
 
-  return utils.through.obj(function(file, enc, next) {
-    var travisConfig = utils.yaml.safeLoad(file.contents.toString());
+  return through.obj(function(file, enc, next) {
+    var travisConfig = yaml.safeLoad(file.contents.toString());
     var config = utils.updateEngines(defaults, pkg, travisConfig);
 
-    file.contents = new Buffer(utils.yaml.dump(config));
+    file.contents = new Buffer(yaml.dump(config));
     if (opts.delete === false) {
       next(null, file);
       return;
     }
 
-    utils.del(file.path, function(err) {
+    del(file.path, function(err) {
       if (err) return next(err);
       next(null, file);
     });

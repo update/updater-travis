@@ -2,24 +2,11 @@
 
 var merge = require('merge-deep');
 var unset = require('unset-value');
-var unionValue = require('union-value');
 var set = require('set-value');
 var semver = require('semver');
 var get = require('get-value');
-var utils = require('lazy-cache')(require);
-var fn = require;
-require = utils;
-
-/**
- * Lazily required module dependencies
- */
-
-require('delete', 'del');
-require('fs-exists-sync', 'exists');
-require('is-valid-app', 'isValid');
-require('js-yaml', 'yaml');
-require('through2', 'through');
-require = fn;
+var unionValue = require('union-value');
+var utils = module.exports;
 
 utils.updateEngines = function(defaults, pkg, travis) {
   var engines = mergeEngines(defaults, travis);

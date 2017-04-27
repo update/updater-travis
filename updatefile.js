@@ -111,7 +111,10 @@ module.exports = function(app) {
     var cwd = path.resolve.bind(path, app.options.dest || app.cwd);
     var hasTravis = fs.existsSync(cwd('.travis.yml'));
     var hasTests = fs.existsSync(cwd('test')) || fs.existsSync(cwd('test.js'));
-    ctx.tasks = hasTests && hasTravis ? ['travis-update'] : [hasTests ? 'travis-new' : 'travis-del'];
+    ctx.tasks = (hasTests && hasTravis)
+      ? ['travis-update']
+      : ([hasTests ? 'travis-new' : 'travis-del']);
+
     return ctx.tasks;
   }
 };

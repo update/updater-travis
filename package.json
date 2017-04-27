@@ -27,8 +27,8 @@
     "delete": "^0.3.2",
     "generate-travis": "^0.3.1",
     "get-value": "^2.0.6",
-    "is-valid-app": "^0.2.1",
-    "js-yaml": "^3.8.1",
+    "is-valid-app": "^0.3.0",
+    "js-yaml": "^3.8.3",
     "merge-deep": "^3.0.0",
     "semver": "^5.3.0",
     "set-value": "^0.4.3",
@@ -38,8 +38,8 @@
   },
   "devDependencies": {
     "copy": "^0.3.0",
-    "gulp-format-md": "^0.1.11",
-    "mocha": "^3.2.0",
+    "gulp-format-md": "^0.1.12",
+    "mocha": "^3.3.0",
     "npm-install-global": "^0.1.2",
     "update": "^0.7.4"
   },

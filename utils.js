@@ -40,12 +40,16 @@ utils.updateEngines = function(defaults, pkg, travis) {
 
   updateValue(travis, 'node_js', required);
   updateValue(travis, 'matrix.allow_failures', arr, 'node_js');
+
   if (!get(travis, 'matrix.allow_failures').length) {
     unset(travis, 'matrix.allow_failures');
+    unset(travis, 'matrix.fast_finish');
   }
+
   if (Object.keys(travis.matrix).length === 1) {
     delete travis.matrix;
   }
+
   return travis;
 };
 

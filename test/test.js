@@ -37,6 +37,8 @@ function exists(name, re, cb) {
 }
 
 describe('updater-travis', function() {
+  this.timeout(20000);
+
   if (!process.env.CI && !process.env.TRAVIS) {
     before(function(cb) {
       npm.maybeInstall('update', cb);
